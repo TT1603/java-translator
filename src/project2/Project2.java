@@ -22,6 +22,41 @@ public class Project2 {
 		    //new output file
 			parseFile(inp, writer);
 			
+			//take agrs in : var x = args[0]
+			Pattern p1 = Pattern.compile("var (.+) = args\\[(\\d+)\\];");
+			String s1 = "var x = args[0];";
+			Matcher m1 = p1.matcher(s1);
+				if(m1.find()) {
+					
+				System.out.println(m1.group(0));
+				System.out.println(m1.group(1));
+				
+				writer.write("int "+ m1.group(1)+" = arg["+m1.group(2)+"];\n");
+			}
+				
+			//variable assignment for integer or real Pattern 
+			Pattern p2 = Pattern.compile("var (.+) = ((\\d+)|(\\d+\\.\\d+));");
+			String s2 = "var a = 5.5;";
+			Matcher m2 = p2.matcher(s2);
+				
+			if(m2.find()) {
+				System.out.println(m2.group(0));
+				System.out.println(m2.group(1));
+				System.out.println(m2.group(2));
+					
+				writer.write("int "+ m1.group(1) + " = " + m1.group(2)+";\n");
+			}
+			
+			Pattern p3 = Pattern.compile("if (.+) (+|-|*|/|%) (.+) == (\\d+);");
+			String s3 = "command in: args";
+			Matcher m3 = p3.matcher(s3);
+			
+			if(m3.find()) {
+				System.out.println(m3.group(0));
+				System.out.println(m3.group(1));
+				System.out.println("if "+ m3.group(1) + " = " + m3.group(2) + m3.group(3));
+			}
+			
 			writer.write("\n\t}\n}");
 			writer.close();
 		} catch(Exception e) {  
@@ -66,4 +101,29 @@ public class Project2 {
 //		System.out.println(m2.group(1));
 //		System.out.println(m2.group(2));
 //	}
+	
+	
+
+		
+/**		
+		//command in: args;  
+		Pattern p3 = Pattern.compile("command in: args;");
+		String s3 = "command in: args;";
+		Matcher m3 = p3.matcher(s3);
+		
+		if(m3.find()) {
+			System.out.println("public static void main (String[] " + args + ") {");
+		}
+		
+
+	
+		
+		//if...then: if i % x == 0 then count = count + 1
+
+
+		
+		}
+	}
+*/
+
 }
