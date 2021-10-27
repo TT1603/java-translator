@@ -1,5 +1,7 @@
 package project2;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.regex.Matcher;
@@ -10,63 +12,112 @@ public class Project2 {
 	public static void main (String[] args) {
 		try {  
 			// open the text file to be translated
-			File inp = new File(args[0]); 
-			String outFileName = ("Program1.txt".split("\\."))[0];			
+			String inFileName = args[0];
+			File inp = new File(inFileName); 
+			FileReader fr = new FileReader(inp);
+			BufferedReader br = new BufferedReader(fr);
+			
 			
 			// create new output file in Java and set up code
+			String outFileName = (inFileName.split("\\."))[0];			
 			File out = new File(outFileName + ".java"); 
 			FileWriter writer = new FileWriter(outFileName + ".java");
 		    initialCode(writer, outFileName);
 		    
+		    
 		    // translate the input file to Java and write to 
 		    //new output file
-			parseFile(inp, writer);
+			parseFile(writer, br);
 			
-			//take agrs in : var x = args[0]
-			Pattern p1 = Pattern.compile("var (.+) = args\\[(\\d+)\\];");
-			String s1 = "var x = args[0];";
-			Matcher m1 = p1.matcher(s1);
-				if(m1.find()) {
-					
-				System.out.println(m1.group(0));
-				System.out.println(m1.group(1));
-				
-				writer.write("int "+ m1.group(1)+" = arg["+m1.group(2)+"];\n");
-			}
-				
-			//variable assignment for integer or real Pattern 
-			Pattern p2 = Pattern.compile("var (.+) = ((\\d+)|(\\d+\\.\\d+));");
-			String s2 = "var a = 5.5;";
-			Matcher m2 = p2.matcher(s2);
-				
-			if(m2.find()) {
-				System.out.println(m2.group(0));
-				System.out.println(m2.group(1));
-				System.out.println(m2.group(2));
-					
-				writer.write("int "+ m1.group(1) + " = " + m1.group(2)+";\n");
-			}
 			
-			Pattern p3 = Pattern.compile("if (.+) (+|-|*|/|%) (.+) == (\\d+);");
-			String s3 = "command in: args";
-			Matcher m3 = p3.matcher(s3);
-			
-			if(m3.find()) {
-				System.out.println(m3.group(0));
-				System.out.println(m3.group(1));
-				System.out.println("if "+ m3.group(1) + " = " + m3.group(2) + m3.group(3));
-			}
-			
-			writer.write("\n\t}\n}");
+			// finalize code and close file
+			writer.write("}\n}");
 			writer.close();
+			br.close();
+			fr.close();
+			
 		} catch(Exception e) {  
 			e.printStackTrace();  
 		}  
 	}
 	
-	public static void parseFile(File inp, FileWriter w) {
+	public static void parseFile(FileWriter w, BufferedReader br) {
 		try {
-			w.write("\tSystem.out.println(\"Hello World\");\n");
+			String line;  
+			while((line = br.readLine()) != null) {
+				
+				// take command-line arguments: 
+				// var <variable> = args[<integer>];
+				// NOTES: variable names are alphabetic
+				Pattern p1 = Pattern.compile("var (([a-z]+)|([A-Z]+)) = args\\[(\\d+)\\];");
+				Matcher m1 = p1.matcher(line);
+				if(m1.find()) {						
+					System.out.println(m1.group(0));
+					w.write("int "+ m1.group(1)+" = arg["+m1.group(2)+"];\n");
+					continue;
+				}
+					
+				
+				// print string_literals to output
+				// <print> ::= print <string_literal>;
+				Pattern p2 = Pattern.compile("print \"(.*)\";");
+				Matcher m2 = p2.matcher(line);
+					
+				if(m2.find()) {
+					System.out.println(m2.group(0));		
+					w.write("System.out.println(\"" + m2.group(1) + "\");\n");
+					continue;
+				}
+				
+				
+				// print variables to output
+				// <print> ::= print <variable>;
+				Pattern p3 = Pattern.compile("print (([a-z]+)|([A-Z]+));");
+				Matcher m3 = p3.matcher(line);
+					
+				if(m3.find()) {
+					System.out.println(m3.group(0));		
+					w.write("System.out.println(" + m3.group(1) + ");\n");
+					continue;
+				}
+				
+				
+				// comments
+				// <comment> ::= //<string> 
+				Pattern p4 = Pattern.compile("//(.*)");
+				Matcher m4 = p4.matcher(line);
+					
+				if(m4.find()) {
+					System.out.println(m4.group(0));		
+					w.write("//" + m4.group(1) + "\n");
+					continue;
+				}
+				
+				
+				// variable assignment for integer, real, variable, array element:
+				// var <variable> = <integer> | <real> | <variable> | <arr_access>;
+				Pattern p5 = Pattern.compile("var ([a-z]+|[A-Z]+) = (\\d+|\\d+\\.\\d+|[a-z]+|[A-Z]+|([a-z]+|[A-Z])\\[(\\d+)\\]);");
+				Matcher m5 = p5.matcher(line);
+					
+				if(m5.find()) {
+					System.out.println(m5.group(0));		
+					w.write("int "+ m5.group(1) + " = " + m5.group(2)+";\n");
+					continue;
+				}
+				
+				// integer expressions
+				
+				// boolean expressions
+				
+				// array operations
+				
+				// conditionals
+				
+				// loops
+								
+				
+			}
+			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -76,54 +127,10 @@ public class Project2 {
 	public static void initialCode(FileWriter w, String name) {
 		try {
 			w.write("\npublic class " + name + "{\n");
-			w.write("\n\tpublic static void main(String[] args){\n\t");
+			w.write("\npublic static void main(String[] args){\n");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		
 	}
-	
-	// ML variable assignment (assuming integer)
-//	Pattern p1 = Pattern.compile("val (.+) = (\\d+);");
-//	String s1 = "val varName = 789;";
-//	Matcher m1 = p1.matcher(s1);
-//	if(m1.find()) {
-//		System.out.println(m1.group(0));
-//		System.out.println(m1.group(1));
-//		System.out.println(m1.group(2));
-//	}
-//	// ML variable assignment for integer or real
-//	Pattern p2 = Pattern.compile("val (.+) = ((\\d+)|(\\d+\\.\\d+));");
-//	String s2 = "val x = 5.5;";
-//	Matcher m2 = p2.matcher(s2);
-//	if(m2.find()) {
-//		System.out.println(m2.group(0));
-//		System.out.println(m2.group(1));
-//		System.out.println(m2.group(2));
-//	}
-	
-	
-
-		
-/**		
-		//command in: args;  
-		Pattern p3 = Pattern.compile("command in: args;");
-		String s3 = "command in: args;";
-		Matcher m3 = p3.matcher(s3);
-		
-		if(m3.find()) {
-			System.out.println("public static void main (String[] " + args + ") {");
-		}
-		
-
-	
-		
-		//if...then: if i % x == 0 then count = count + 1
-
-
-		
-		}
-	}
-*/
-
 }

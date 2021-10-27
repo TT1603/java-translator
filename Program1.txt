@@ -1,4 +1,5 @@
-command in: args;  
+// program to find multiples x or y between 1 and m
+
 var x = args[0];
 var y = args[1];
 var m = args[2];
