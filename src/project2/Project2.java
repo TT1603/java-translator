@@ -46,75 +46,152 @@ public class Project2 {
 			String line;  
 			while((line = br.readLine()) != null) {
 				
+				/** basic components: integer, real, boolean
+					variable names, string literals
+				*/
+				Pattern integer = Pattern.compile("(\\d+)");
+				Pattern real = Pattern.compile("(\\d+)\\.(\\d+)");
+				Pattern bool = Pattern.compile("True|False");
+				Pattern variable = Pattern.compile("([a-zA-Z]+)");
+				Pattern string = Pattern.compile("\\\"(.*)\\\"");
+				
+				
+				//-----------------------------------------
+				/** Expression types: arithmetic (int, real), boolean,
+					array declaration/access
+				
+					1) Arithmetic
+					<expr_int> ::= <expr_int> + <mul_expr> | <expr_int> - <mul_expr> | <mul_expr>
+					<mul_expr> ::= <mul_expr> * <neg_expr> | <mul_expr> / <neg_expr> | <mul_expr> % <neg_expr> | <neg_expr>
+					<neg_expr> ::= - <i_root> | <i_root> 
+					<i_root> ::= <integer> | <real> | <variable> | sqrt(<expr_int>)
+				*/
+				Pattern iRoot = Pattern.compile(real+"|"+integer+"|"+variable);
+				Pattern neg = Pattern.compile("-"+iRoot+"|"+iRoot);
+				Pattern mul = Pattern.compile(neg +" * "+ neg+"|"+neg +" \\/ "+ neg+"|"+neg +" \\% "+ neg+"|"+neg);
+				
+				Matcher m = mul.matcher(line);
+				if(m.find()) {						
+					System.out.println(m.group(0));
+					w.write(m.group(1) + ", " + m.group(2));
+					continue;
+				}
+				// TO BE FILLED
+				
+				
+				/** 2) boolean
+					<expr_bool> ::= <expr_bool> or <and_expr> | <and_expr>
+					<and_expr> ::= <and_expr> and <not_expr> | <not_expr>
+					<not_expr> ::= not <b_root> | <b_root> 
+					<b_root> ::= <boolean> | <expr_int> <operator> <expr_int> 
+					<operator> ::= < | > | = | <= | >= | ==
+				*/
+				// TO BE FILLED
+				
+				
+				/** 3) array operations
+					<arr_expr> ::= [<arr_element>] | []
+					<arr_element> ::= <arr_element>,<variable> | <arr_element>,<integer> | <arr_element>, <boolean> | <variable> | <integer> | <boolean>
+					<arr_access> ::= <variable>[<integer>]
+				*/
+				// TO BE FILLED
+				
+				
+				
+				//-----------------------------------------
 				// take command-line arguments: 
-				// var <variable> = args[<integer>];
-				// NOTES: variable names are alphabetic
-				Pattern p1 = Pattern.compile("var (([a-z]+)|([A-Z]+)) = args\\[(\\d+)\\];");
-				Matcher m1 = p1.matcher(line);
-				if(m1.find()) {						
-					System.out.println(m1.group(0));
-					w.write("int "+ m1.group(1)+" = arg["+m1.group(2)+"];\n");
-					continue;
-				}
-					
-				
-				// print string_literals to output
-				// <print> ::= print <string_literal>;
-				Pattern p2 = Pattern.compile("print \"(.*)\";");
-				Matcher m2 = p2.matcher(line);
-					
-				if(m2.find()) {
-					System.out.println(m2.group(0));		
-					w.write("System.out.println(\"" + m2.group(1) + "\");\n");
+
+				// int <variable> = args[<integer>];
+				Pattern pArgs1 = Pattern.compile("int " + variable + " = args\\[" + integer + "\\];");
+				Matcher mArgs1 = pArgs1.matcher(line);
+				if(mArgs1.find()) {						
+					System.out.println(mArgs1.group(0));
+					w.write("int " + mArgs1.group(1) + " = (int) arg[" + mArgs1.group(2) + "];\n");
 					continue;
 				}
 				
+				// real <variable> = args[<integer>];
+				Pattern pArgs2 = Pattern.compile("real " + variable + " = args\\[" + integer + "\\];");
+				Matcher mArgs2 = pArgs2.matcher(line);
+				if(mArgs2.find()) {						
+					System.out.println(mArgs2.group(0));
+					w.write("float " + mArgs2.group(1) + " = (float) arg[" + mArgs2.group(2) + "];\n");
+					continue;
+				}
 				
+				// string <variable> = args[<integer>];
+				Pattern pArgs3 = Pattern.compile("string " + variable + " = args\\[" + integer + "\\];");
+				Matcher mArgs3 = pArgs3.matcher(line);
+				if(mArgs3.find()) {						
+					System.out.println(mArgs3.group(0));
+					w.write("String " + mArgs3.group(1) + " = (int) arg[" + mArgs3.group(2) + "];\n");
+					continue;
+				}
+				
+				
+				//-----------------------------------------
+				/** print string_literals to output
+					can be anything inside ""
+				 */
+				Pattern pPrintStr = Pattern.compile("print " + string + ";");
+				Matcher mPrintStr = pPrintStr.matcher(line);	
+				if(mPrintStr.find()) {
+					System.out.println(mPrintStr.group(0));		
+					w.write("System.out.println(\"" + mPrintStr.group(1) + "\");\n");
+					continue;
+				}
+						
 				// print variables to output
-				// <print> ::= print <variable>;
-				Pattern p3 = Pattern.compile("print (([a-z]+)|([A-Z]+));");
-				Matcher m3 = p3.matcher(line);
+				Pattern pPrintVar = Pattern.compile("print " + variable + ";");
+				Matcher mPrintVar = pPrintVar.matcher(line);
 					
-				if(m3.find()) {
-					System.out.println(m3.group(0));		
-					w.write("System.out.println(" + m3.group(1) + ");\n");
+				if(mPrintVar.find()) {
+					System.out.println(mPrintVar.group(0));		
+					w.write("System.out.println(" + mPrintVar.group(1) + ");\n");
+					continue;
+				}
+					
+				
+				//-----------------------------------------
+				// comments: can be anything after double dashes (//)
+				Pattern pCmt = Pattern.compile("//(.*)");
+				Matcher mCmt = pCmt.matcher(line);
+					
+				if(mCmt.find()) {
+					System.out.println(mCmt.group(0));		
+					w.write("//" + mCmt.group(1) + "\n");
 					continue;
 				}
 				
 				
-				// comments
-				// <comment> ::= //<string> 
-				Pattern p4 = Pattern.compile("//(.*)");
-				Matcher m4 = p4.matcher(line);
-					
-				if(m4.find()) {
-					System.out.println(m4.group(0));		
-					w.write("//" + m4.group(1) + "\n");
-					continue;
-				}
+				//-----------------------------------------
+				/** Variable assignments: 
+					<variable_assign> ::= int|real|string|boolean <variable> = 
+					<i_root>|<boolean>|<string_literal>|<expr_intr>|<expr_bool>|<arr_access>|<arr_expr>;|
+					int|real|string|boolean[] <variable> = 
+					<i_root>|<boolean>|<string_literal>|<expr_intr>|<expr_bool>|<arr_access>|<arr_expr>;
+				*/
+				// TO BE FILLED
 				
 				
-				// variable assignment for integer, real, variable, array element:
-				// var <variable> = <integer> | <real> | <variable> | <arr_access>;
-				Pattern p5 = Pattern.compile("var ([a-z]+|[A-Z]+) = (\\d+|\\d+\\.\\d+|[a-z]+|[A-Z]+|([a-z]+|[A-Z])\\[(\\d+)\\]);");
-				Matcher m5 = p5.matcher(line);
-					
-				if(m5.find()) {
-					System.out.println(m5.group(0));		
-					w.write("int "+ m5.group(1) + " = " + m5.group(2)+";\n");
-					continue;
-				}
+				//-----------------------------------------
+				/** Conditionals:
+					<conditional> ::= if <expr_bool> then <stmt>; | if <expr_bool> then <stmt> else <stmt>;
+					<stmt> ::= <var> = <expr>; | return <expr>; | <variable_assign>;
+					<expr> ::= <integer> | <real> | <boolean> | <expr_int> | <expr_bool> | <arr_expr> | <arr_access
+				*/ 
+				// TO BE FILLED
 				
-				// integer expressions
+				 
 				
-				// boolean expressions
+				//-----------------------------------------
+				/** Loops:
+					loops
+					<loop> ::= while <integer> {<stmt>} | while <expr_bool> {<stmt>}
+				*/
+				// TO BE FILLED
+
 				
-				// array operations
-				
-				// conditionals
-				
-				// loops
-								
 				
 			}
 			
