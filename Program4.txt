@@ -1,0 +1,3 @@
+int x  =  args[0];
+//should be int x = args[0];
+

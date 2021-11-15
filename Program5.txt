@@ -1,0 +1,3 @@
+int x_1 = arg[0];
+//variable name can only be alphabetic characters;
+

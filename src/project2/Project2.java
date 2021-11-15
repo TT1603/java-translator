@@ -25,9 +25,12 @@ public class Project2 {
 		    initialCode(writer, outFileName);
 		    
 		    
+		    System.out.println("Int Expr: ");
+			System.out.println(parseInt("sqrt(3)"));
+		    
 		    // translate the input file to Java and write to 
 		    //new output file
-			parseFile(writer, br);
+			//parseFile(writer, br);
 			
 			
 			// finalize code and close file
@@ -41,42 +44,26 @@ public class Project2 {
 		}  
 	}
 	
+	
+	/** basic components: integer, real, boolean
+	variable names, string literals
+	 */
+	static Pattern integer = Pattern.compile("(\\d+)");
+	static Pattern real = Pattern.compile("(\\d+)\\.(\\d+)");
+	static Pattern bool = Pattern.compile("True|False");
+	static Pattern variable = Pattern.compile("([a-zA-Z]+)");
+	static Pattern string = Pattern.compile("\\\"(.*)\\\"");
+	
 	public static void parseFile(FileWriter w, BufferedReader br) {
 		try {
 			String line;  
-			while((line = br.readLine()) != null) {
+			while((line = br.readLine()) != null) {	
 				
-				/** basic components: integer, real, boolean
-					variable names, string literals
-				*/
-				Pattern integer = Pattern.compile("(\\d+)");
-				Pattern real = Pattern.compile("(\\d+)\\.(\\d+)");
-				Pattern bool = Pattern.compile("True|False");
-				Pattern variable = Pattern.compile("([a-zA-Z]+)");
-				Pattern string = Pattern.compile("\\\"(.*)\\\"");
-				
-				
-				//-----------------------------------------
 				/** Expression types: arithmetic (int, real), boolean,
 					array declaration/access
 				
-					1) Arithmetic
-					<expr_int> ::= <expr_int> + <mul_expr> | <expr_int> - <mul_expr> | <mul_expr>
-					<mul_expr> ::= <mul_expr> * <neg_expr> | <mul_expr> / <neg_expr> | <mul_expr> % <neg_expr> | <neg_expr>
-					<neg_expr> ::= - <i_root> | <i_root> 
-					<i_root> ::= <integer> | <real> | <variable> | sqrt(<expr_int>)
-				*/
-				Pattern iRoot = Pattern.compile(real+"|"+integer+"|"+variable);
-				Pattern neg = Pattern.compile("-"+iRoot+"|"+iRoot);
-				Pattern mul = Pattern.compile(neg +" * "+ neg+"|"+neg +" \\/ "+ neg+"|"+neg +" \\% "+ neg+"|"+neg);
 				
-				Matcher m = mul.matcher(line);
-				if(m.find()) {						
-					System.out.println(m.group(0));
-					w.write(m.group(1) + ", " + m.group(2));
-					continue;
-				}
-				// TO BE FILLED
+					
 				
 				
 				/** 2) boolean
@@ -86,7 +73,7 @@ public class Project2 {
 					<b_root> ::= <boolean> | <expr_int> <operator> <expr_int> 
 					<operator> ::= < | > | = | <= | >= | ==
 				*/
-				// TO BE FILLED
+				
 				
 				
 				/** 3) array operations
@@ -94,7 +81,6 @@ public class Project2 {
 					<arr_element> ::= <arr_element>,<variable> | <arr_element>,<integer> | <arr_element>, <boolean> | <variable> | <integer> | <boolean>
 					<arr_access> ::= <variable>[<integer>]
 				*/
-				// TO BE FILLED
 				
 				
 				
@@ -171,7 +157,6 @@ public class Project2 {
 					int|real|string|boolean[] <variable> = 
 					<i_root>|<boolean>|<string_literal>|<expr_intr>|<expr_bool>|<arr_access>|<arr_expr>;
 				*/
-				// TO BE FILLED
 				
 				
 				//-----------------------------------------
@@ -180,7 +165,6 @@ public class Project2 {
 					<stmt> ::= <var> = <expr>; | return <expr>; | <variable_assign>;
 					<expr> ::= <integer> | <real> | <boolean> | <expr_int> | <expr_bool> | <arr_expr> | <arr_access
 				*/ 
-				// TO BE FILLED
 				
 				 
 				
@@ -189,18 +173,78 @@ public class Project2 {
 					loops
 					<loop> ::= while <integer> {<stmt>} | while <expr_bool> {<stmt>}
 				*/
-				// TO BE FILLED
-
-				
-				
+			
 			}
 			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		
+		
 	}
 	
+	//<expr_int> ::= <expr_int> + <mul_expr> | <expr_int> - <mul_expr> | <mul_expr>
+	public static String parseInt(String exp) {
+		Pattern p = Pattern.compile(parseMul(exp));//+"|"+parseInt(exp)+" - "+parseMul(exp)+"|"+parseInt(exp)+" + "+parseMul(exp));
+//		Matcher m = p.matcher(exp);	
+//		if(m.find()) {
+//			return m.group(0);
+//		}
+		return "";
+
+	}
+	
+	// <mul_expr> ::= <mul_expr> * <neg_expr> | <mul_expr> / <neg_expr> | <mul_expr> % <neg_expr> | <neg_expr>
+	public static String parseMul(String exp) {
+		Pattern p = Pattern.compile(parseNeg(exp));//+"|"+parseMul(exp)+" / "+parseNeg(exp)+"|"+parseMul(exp)+" % "+parseNeg(exp)+"|"+parseMul(exp)+" * "+parseNeg(exp));
+//		Matcher m = p.matcher(exp);	
+//		if(m.find()) {
+//			return m.group(0);
+//		}
+		return "";
+	}
+	
+	//<neg_expr> ::= - <i_root> | <i_root> 
+	public static String parseNeg(String exp) {
+		Pattern p = Pattern.compile(parseIRoot(exp));//+"|"+parseIRoot(exp));
+//		Matcher m = p.matcher(exp);	
+//		if(m.find()) {
+//			return m.group(0);
+//		}
+		return "";
+	}
+	
+	//<i_root> ::= <integer> | <real> | <variable> | sqrt(<expr_int>)
+	public static String parseIRoot(String exp) {
+		if (exp.length() == 0){
+			return "";
+		}
+		System.out.println(exp);
+		Pattern p2 = Pattern.compile("sqrt\\("+parseInt(exp.substring(5,exp.length()-1))+"\\)");
+		Matcher m2 = p2.matcher(exp);	
+		if(m2.find()) {
+			System.out.println(m2.group(0));
+			return m2.group(0);
+		}
+		
+		Pattern p1 = Pattern.compile(integer+"|"+real+"|"+variable);
+		Matcher m1 = p1.matcher(exp);	
+		if(m1.find()) {
+			System.out.println(m1.group(0));
+			return m1.group(0);
+		}
+		
+		return "";
+	}
+	
+	
+	public static String parseBool(Pattern exp) {
+		return "";
+	}
+	
+	
+	
+	// Initiate code for Java program
 	public static void initialCode(FileWriter w, String name) {
 		try {
 			w.write("\npublic class " + name + "{\n");
