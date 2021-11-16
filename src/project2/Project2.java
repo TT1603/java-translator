@@ -73,7 +73,7 @@ public class Project2 {
 				pArgs1 = Pattern.compile("var " + variable + " = arg" + integer);
 				mArgs1 = pArgs1.matcher(line);
 				if(mArgs1.find()) {						
-					w.write("int " + mArgs1.group(1) + " = (int) args[" + mArgs1.group(2) + "];\n");
+					w.write("int " + mArgs1.group(1) + " = Integer.valueOf(args[" + mArgs1.group(2) + "]);\n");
 					continue;
 				}
 				
@@ -380,6 +380,7 @@ public class Project2 {
 	                }
 	            } else if ((ch >= '0' && ch <= '9') || ch >= 'a' && ch <= 'z') { // numbers
 	                while ((ch >= '0' && ch <= '9') || ch >= 'a' && ch <= 'z') {
+	                	System.out.println((char)ch);
 	                	nextChar();
 	                }
 	            } else {
@@ -529,7 +530,13 @@ public class Project2 {
 					return true;
 				}
 				return false;
-			}		
+			}
+			p = Pattern.compile("return");
+			m = p.matcher(str);	
+			if(m.find()) {
+				w.write("return;\n");
+				return true;
+			}	 
 		}catch (IOException e) {
 			e.printStackTrace();
 		}
