@@ -24,13 +24,8 @@ public class Project2 {
 			FileWriter writer = new FileWriter(outFileName + ".java");
 		    initialCode(writer, outFileName);
 		    
-		    
-		    System.out.println("Int Expr: ");
-			System.out.println(parseInt("sqrt(3)"));
-		    
-		    // translate the input file to Java and write to 
-		    //new output file
-			//parseFile(writer, br);
+		    // translate the input file to Java and write to new output file
+			parseFile(writer, br);
 			
 			
 			// finalize code and close file
@@ -49,199 +44,454 @@ public class Project2 {
 	variable names, string literals
 	 */
 	static Pattern integer = Pattern.compile("(\\d+)");
-	static Pattern real = Pattern.compile("(\\d+)\\.(\\d+)");
 	static Pattern bool = Pattern.compile("True|False");
-	static Pattern variable = Pattern.compile("([a-zA-Z]+)");
+	static Pattern variable = Pattern.compile("([a-z]+)");
 	static Pattern string = Pattern.compile("\\\"(.*)\\\"");
-	
+
+	static boolean inIfElse = false;
+
 	public static void parseFile(FileWriter w, BufferedReader br) {
 		try {
 			String line;  
 			while((line = br.readLine()) != null) {	
 				
-				/** Expression types: arithmetic (int, real), boolean,
-					array declaration/access
+				// pre-process the line
+				line = line.strip();
+				if (line.length() == 0) {
+					continue;
+				}
+				if (line.charAt(line.length()-1) == ';') {
+					line = line.substring(0, line.length()-1);
+				}
 				
 				
-					
-				
-				
-				/** 2) boolean
-					<expr_bool> ::= <expr_bool> or <and_expr> | <and_expr>
-					<and_expr> ::= <and_expr> and <not_expr> | <not_expr>
-					<not_expr> ::= not <b_root> | <b_root> 
-					<b_root> ::= <boolean> | <expr_int> <operator> <expr_int> 
-					<operator> ::= < | > | = | <= | >= | ==
-				*/
-				
-				
-				
-				/** 3) array operations
-					<arr_expr> ::= [<arr_element>] | []
-					<arr_element> ::= <arr_element>,<variable> | <arr_element>,<integer> | <arr_element>, <boolean> | <variable> | <integer> | <boolean>
-					<arr_access> ::= <variable>[<integer>]
-				*/
-				
-				
-				
-				//-----------------------------------------
-				// take command-line arguments: 
-
-				// int <variable> = args[<integer>];
-				Pattern pArgs1 = Pattern.compile("int " + variable + " = args\\[" + integer + "\\];");
-				Matcher mArgs1 = pArgs1.matcher(line);
+				// command-line arguments: 
+				// <command_line> ::= <variable> = args<integer>
+				Pattern pArgs1; Matcher mArgs1;
+				pArgs1 = Pattern.compile("var " + variable + " = arg" + integer);
+				mArgs1 = pArgs1.matcher(line);
 				if(mArgs1.find()) {						
-					System.out.println(mArgs1.group(0));
-					w.write("int " + mArgs1.group(1) + " = (int) arg[" + mArgs1.group(2) + "];\n");
+					//System.out.println(mArgs1.group(0));
+					w.write("int " + mArgs1.group(1) + " = (int) args[" + mArgs1.group(2) + "];\n");
 					continue;
 				}
 				
-				// real <variable> = args[<integer>];
-				Pattern pArgs2 = Pattern.compile("real " + variable + " = args\\[" + integer + "\\];");
-				Matcher mArgs2 = pArgs2.matcher(line);
-				if(mArgs2.find()) {						
-					System.out.println(mArgs2.group(0));
-					w.write("float " + mArgs2.group(1) + " = (float) arg[" + mArgs2.group(2) + "];\n");
+				pArgs1 = Pattern.compile(variable + " = arg" + integer);
+				mArgs1 = pArgs1.matcher(line);
+				if(mArgs1.find()) {						
+					//System.out.println(mArgs1.group(0));
+					w.write(mArgs1.group(1) + " = (int) args[" + mArgs1.group(2) + "];\n");
 					continue;
-				}
+				}		
 				
-				// string <variable> = args[<integer>];
-				Pattern pArgs3 = Pattern.compile("string " + variable + " = args\\[" + integer + "\\];");
-				Matcher mArgs3 = pArgs3.matcher(line);
-				if(mArgs3.find()) {						
-					System.out.println(mArgs3.group(0));
-					w.write("String " + mArgs3.group(1) + " = (int) arg[" + mArgs3.group(2) + "];\n");
-					continue;
-				}
-				
-				
-				//-----------------------------------------
-				/** print string_literals to output
-					can be anything inside ""
-				 */
-				Pattern pPrintStr = Pattern.compile("print " + string + ";");
-				Matcher mPrintStr = pPrintStr.matcher(line);	
-				if(mPrintStr.find()) {
-					System.out.println(mPrintStr.group(0));		
-					w.write("System.out.println(\"" + mPrintStr.group(1) + "\");\n");
-					continue;
-				}
-						
-				// print variables to output
-				Pattern pPrintVar = Pattern.compile("print " + variable + ";");
-				Matcher mPrintVar = pPrintVar.matcher(line);
-					
-				if(mPrintVar.find()) {
-					System.out.println(mPrintVar.group(0));		
-					w.write("System.out.println(" + mPrintVar.group(1) + ");\n");
-					continue;
-				}
-					
-				
-				//-----------------------------------------
 				// comments: can be anything after double dashes (//)
 				Pattern pCmt = Pattern.compile("//(.*)");
-				Matcher mCmt = pCmt.matcher(line);
-					
+				Matcher mCmt = pCmt.matcher(line);				
 				if(mCmt.find()) {
-					System.out.println(mCmt.group(0));		
+					//System.out.println(mCmt.group(0));		
 					w.write("//" + mCmt.group(1) + "\n");
 					continue;
 				}
 				
+				// CONDITIONALS (IF-ELSE)
+				// <conditional> ::= if <expr_bool> then <stmt> end. | else if <expr_bool> then <stmt> end.
+				// | if <expr_bool> then <stmt> else <stmt> end.
+				// | else if <expr_bool> then <stmt> else <stmt> end.
+				// | else <stmt> end.
+				// <stmt> ::= <var> = <expr> | return <expr> | <variable_assign>
+				// <expr> ::= <integer> | <boolean> | <expr_int> | <expr_bool> 				
 				
-				//-----------------------------------------
-				/** Variable assignments: 
-					<variable_assign> ::= int|real|string|boolean <variable> = 
-					<i_root>|<boolean>|<string_literal>|<expr_intr>|<expr_bool>|<arr_access>|<arr_expr>;|
-					int|real|string|boolean[] <variable> = 
-					<i_root>|<boolean>|<string_literal>|<expr_intr>|<expr_bool>|<arr_access>|<arr_expr>;
-				*/
+				Pattern p1; Matcher m1;
 				
+				p1 = Pattern.compile("else if (.*) then (.*) else (.*) end.");
+				m1 = p1.matcher(line);	
+				if(m1.find()) {
+					throw new Exception("Wrong conditional " + m1.group(0));
+				}
+				p1 = Pattern.compile("if (.*) then (.*) else (.*) end.");
+				m1 = p1.matcher(line);	
+				if(m1.find()) {
+					throw new Exception("Wrong conditional " + m1.group(0));
+				}
+				p1 = Pattern.compile("else (.*) end.");
+				m1 = p1.matcher(line);	
+				if(m1.find()) {
+					throw new Exception("Wrong conditional " + m1.group(0));
+				}
 				
-				//-----------------------------------------
-				/** Conditionals:
-					<conditional> ::= if <expr_bool> then <stmt>; | if <expr_bool> then <stmt> else <stmt>;
-					<stmt> ::= <var> = <expr>; | return <expr>; | <variable_assign>;
-					<expr> ::= <integer> | <real> | <boolean> | <expr_int> | <expr_bool> | <arr_expr> | <arr_access
-				*/ 
+				p1 = Pattern.compile("else if (.*) then (.*) else (.*)");
+				m1 = p1.matcher(line);			
+				if(m1.find()) {
+					if (!parseBool(m1.group(1))) {
+						throw new Exception("Wrong conditional " + m1.group(1));
+				    }
+					w.write("else if (" + m1.group(1) + "){\n\t");
+					
+					if (!parseStmt(m1.group(2), w)) {
+						throw new Exception("Wrong conditional " + m1.group(2));
+					}		
+					w.write("}else{\n\t");
+					
+					if (!parseStmt(m1.group(3), w)) {
+						throw new Exception("Wrong conditional " + m1.group(3));
+					}		
+					w.write("}\n");
+					//System.out.println("\nGroup1: "+ m1.group(1) + "\nGroup2: "+ m1.group(2) + "\nGroup3: "+ m1.group(3) + "\n");		
+					//w.write("if (" + m1.group(1) + "){\n\t" + m1.group(2) + ";\n}else{\n" + m1.group(3) + ";\n}\n");
+					continue;
+				}			
 				
-				 
+				p1 = Pattern.compile("if (.*) then (.*) else (.*)");
+				m1 = p1.matcher(line);				
+				if(m1.find()) {
+					if (!parseBool(m1.group(1))) {
+						throw new Exception("Wrong conditional " + m1.group(1));
+				    }
+					w.write("if (" + m1.group(1) + "){\n\t");
+					
+					if (!parseStmt(m1.group(2), w)) {
+						throw new Exception("Wrong conditional " + m1.group(2));
+					}		
+					w.write("}else{\n\t");
+					
+					if (!parseStmt(m1.group(3), w)) {
+						throw new Exception("Wrong conditional " + m1.group(3));
+					}		
+					w.write("}\n");
+					//System.out.println("\nGroup1: "+ m1.group(1) + "\nGroup2: "+ m1.group(2) + "\nGroup3: "+ m1.group(3) + "\n");		
+					//w.write("if (" + m1.group(1) + "){\n\t" + m1.group(2) + ";\n}else{\n" + m1.group(3) + ";\n}\n");
+					continue;
+				}	
+							
+				p1 = Pattern.compile("else if (.*) then (.*)");
+				m1 = p1.matcher(line);			
+				if(m1.find()) {
+					if (!parseBool(m1.group(1))) {
+						throw new Exception("Wrong conditional " + m1.group(1));
+				    }
+					w.write("else if (" + m1.group(1) + "){\n\t");
+					
+					if (!parseStmt(m1.group(2), w)) {
+						throw new Exception("Wrong conditional " + m1.group(2));
+					}		
+					w.write("}\n");
+					//System.out.println("\nGroup1: "+ m1.group(1) + "\nGroup2: "+ m1.group(2) + "\n");		
+					//w.write("if (" + m1.group(1) + "){\n\t" + m1.group(2) + ";\n}\n");
+					continue;
+				}	
+							
+				p1 = Pattern.compile("if (.*) then (.*)");
+				m1 = p1.matcher(line);			
+				if(m1.find()) {
+					if (!parseBool(m1.group(1))) {
+						throw new Exception("Wrong conditional " + m1.group(1));
+				    }
+					w.write("if (" + m1.group(1) + "){\n\t");
+					
+					if (!parseStmt(m1.group(2), w)) {
+						throw new Exception("Wrong conditional " + m1.group(2));
+					}		
+					w.write("}\n");
+					//System.out.println("\nGroup1: "+ m1.group(1) + "\nGroup2: "+ m1.group(2) + "\n");		
+					//w.write("if (" + m1.group(1) + "){\n\t" + m1.group(2) + ";\n}\n");
+					continue;
+				}
+							
+				p1 = Pattern.compile("else if (.*) then");
+				m1 = p1.matcher(line);			
+				if(m1.find()) {
+					inIfElse = true;
+					w.write("else if (" + m1.group(1) + "){\n\t");
+					continue;
+				}
 				
-				//-----------------------------------------
-				/** Loops:
-					loops
-					<loop> ::= while <integer> {<stmt>} | while <expr_bool> {<stmt>}
-				*/
+				p1 = Pattern.compile("if (.*) then");
+				m1 = p1.matcher(line);			
+				if(m1.find()) {
+					inIfElse = true;
+					w.write("if (" + m1.group(1) + "){\n\t");
+					continue;
+				}
+				
+				p1 = Pattern.compile("else (.*)");
+				m1 = p1.matcher(line);
+				if(m1.find()) {
+					w.write("else{\n\t");
+					if (!parseStmt(m1.group(1), w)) {
+						throw new Exception("Wrong conditional " + m1.group(1));
+					}		
+					w.write("}");			
+					//System.out.println("\nGroup1: "+ m1.group(1) + "\n");		
+					//w.write("else{\n\t" + m1.group(1) + ";\n}\n");
+					continue;
+				}
+				
+				p1 = Pattern.compile("else");
+				m1 = p1.matcher(line);			
+				if(m1.find()) {
+					inIfElse = true;
+					w.write("else{\n\t");
+					continue;
+				}
+
+				
+				// LOOPS (WHILE)
+				// <loop> ::=
+				// while <expr_bool>: 
+				// <stmt>
+				// end.
+				Pattern p2; Matcher m2;
+				p2 = Pattern.compile("while (.*):");
+				m2 = p2.matcher(line);			
+				if(m2.find()) {
+					if (!parseBool(m2.group(1))) {
+						throw new Exception("Wrong loop condition " + m2.group(1));
+					}
+					//System.out.println("\nGroup1: "+ m2.group(1) + "\n");		
+					w.write("while (" + m2.group(1) + "){\n");
+					continue;
+				}	
+				p2 = Pattern.compile("end.");
+				m2 = p2.matcher(line);
+				if(m2.find()) {
+					if (line.equals("end.")) {
+						w.write("}\n");
+						continue;
+					}else {
+						throw new Exception("Wrong statement " + line);
+					}
+				}	
 			
+				
+				if (varAssg(line, w)) {
+					continue;
+				}
+				
+				if (printStmt(line, w)) {
+					continue;
+				}
+				
+				if (parseStmt(line, w)) {
+					continue;
+				}
+			
+				// cannot find a pattern
+				System.out.print("ERROR: " + line + "\n");
+				throw new Exception("Line not in grammar " + line + "\n");
 			}
 			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}	
+	}
+	
+	
+	
+	// Assign variable. 
+	// Return true if can parse according to grammar and false otherwise
+	public static boolean varAssg(final String str, FileWriter w) {
+		//-----------------------------------------
+		// Variable assignment
+		// var <variable> ::= <expr>
+		// <expr> ::= <integer> | <variable> | <boolean> | <string_literal> |<expr_int> | <expr_bool> 
+		Pattern p = Pattern.compile("var " + variable + " = " + "(.*)");
+		Matcher m = p.matcher(str);
+		if(m.find()) {
+			if (isExpr(m.group(2))) {
+				//System.out.println(m.group(0));		
+				try {
+					w.write("int " + m.group(1) + " = " + m.group(2) + ";\n");
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				return true;
+			}
+		}
+		return false;
+	}
+
+	
+	
+	// Parse integer expression. 
+	// Return true if can parse according to grammar and false otherwise
+	public static boolean parseInt(final String str) {
+	    return new Object() {
+	        int pos = -1, ch;
+
+	        void nextChar() {
+	            ch = (++pos < str.length()) ? str.charAt(pos) : -1;
+	        }
+
+	        boolean eat(int charToEat) {
+	            while (ch == ' ') {
+	            	nextChar();
+	            }
+	            if (ch == charToEat) {
+	                nextChar();
+	                return true;
+	            }
+	            return false;
+	        }
+
+	        boolean parse() {
+	            nextChar();
+	            boolean x = parseExpression();
+	            if (pos < str.length()) {
+	            	return false;
+	            }
+	            return x;
+	        }
+
+	        /**
+			<expr_int> ::= <expr_int> + <mul_expr> | <expr_int> - <mul_expr> | <mul_expr> 
+			<mul_expr> ::= <mul_expr> * <neg_expr> | <mul_expr> / <neg_expr> | <mul_expr> % <neg_expr> | <neg_expr>
+			<neg_expr> ::= - <i_root> | <i_root> | (<i_root>) 
+			<i_root> ::= <integer> | <variable> | sqrt(<expr_int>)
+	         */
+
+	        boolean parseExpression() {
+	            boolean x = parseTerm();
+	            for (;;) {
+	                if (eat('+')) {
+	                	x = parseTerm(); // addition
+	                }
+	                else if (eat('-')) {
+	                	x = parseTerm(); // subtraction
+	                }
+	                else{
+	                	return x;
+	                }
+	            }
+	        }
+
+	        boolean parseTerm() {
+	            boolean x = parseFactor();
+	            for (;;) {
+	                if (eat('*')) {
+	                	x = parseFactor(); // multiplication
+	                }
+	                else if (eat('/')) {
+	                	x = parseFactor(); // division
+	                }
+	                else if (eat('%')) {
+	                	x = parseFactor(); // modulo
+	                }
+	                else return x;
+	            }
+	        }
+
+	        boolean parseFactor() {
+	            if (eat('-')) {
+	            	return parseFactor(); // unary minus
+	            }
+
+	            boolean x = true;
+	            if (eat('(')) { // parentheses
+	                x = parseExpression();
+	                eat(')');
+	            } else if ((ch >= '0' && ch <= '9') || ch >= 'a' && ch <= 'z') { // numbers
+	                while ((ch >= '0' && ch <= '9') || ch >= 'a' && ch <= 'z') {
+	                	nextChar();
+	                }
+	            } else {
+	                return false;
+	            }
+
+	            return x;
+	        }
+	    }.parse();
+	}
+	
+	
+	
+	// Parse boolean expression. 
+	// Return true if can parse according to grammar and false otherwise
+	public static boolean parseBool(final String str) {
+	    return true;
+	}
+	
+	
+	
+	// Parse a statement: <stmt> ::= <var> = <expr> | return <expr> | <variable_assign> 
+	// Return true if can parse according to grammar and false otherwise
+	public static boolean parseStmt(final String str, FileWriter w) {
+		/**
+		<stmt> ::= <var> = <expr> | return <expr> | <variable_assign> | <print>
+		 */
+		try {
+			if (varAssg(str, w)) {
+				return true;
+			}
+			if (printStmt(str, w)) {
+				return true;
+			}
+		
+			Pattern p; Matcher m;
+			p = Pattern.compile(variable + " = " + "(.*)");
+			m = p.matcher(str);	
+			if(m.find()) {
+				if(isExpr(m.group(2))) {
+					w.write(m.group(1) + " = " + m.group(2) + ";\n");
+					return true;
+				}
+				return false;
+			}
+			p = Pattern.compile("return (.*)");
+			m = p.matcher(str);	
+			if(m.find()) {
+				if(isExpr(m.group(1))) {
+					w.write("return " + m.group(1) + ";\n");
+					return true;
+				}
+				return false;
+			}		
+		}catch (IOException e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+	
+	
+	
+	// print string_literals or variable to output
+	// strings can be anything inside ""	
+	public static boolean printStmt(final String str, FileWriter w) {
+		try {
+			Pattern pPrint; Matcher mPrint;
+			pPrint = Pattern.compile("print " + string);
+			mPrint = pPrint.matcher(str);	
+			if(mPrint.find()) {
+				//System.out.println(mPrint.group(0));		
+				w.write("System.out.println(\"" + mPrint.group(1) + "\");\n");
+				return true;
+			}
+			
+			pPrint = Pattern.compile("print " + variable);
+			mPrint = pPrint.matcher(str);
+			if(mPrint.find()) {
+				//System.out.println(mPrint.group(0));		
+				w.write("System.out.println(" + mPrint.group(1) + ");\n");
+				return true;
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
-		
+		return false;
 	}
 	
-	//<expr_int> ::= <expr_int> + <mul_expr> | <expr_int> - <mul_expr> | <mul_expr>
-	public static String parseInt(String exp) {
-		Pattern p = Pattern.compile(parseMul(exp));//+"|"+parseInt(exp)+" - "+parseMul(exp)+"|"+parseInt(exp)+" + "+parseMul(exp));
-//		Matcher m = p.matcher(exp);	
-//		if(m.find()) {
-//			return m.group(0);
-//		}
-		return "";
+	
+	// Return true if string is an expression and false otherwise
+	// <expr> := <integer> | <variable> | <boolean> | <string_literal> |<expr_int> | <expr_bool> 
+	public static boolean isExpr(final String str) {
+		if (integer.matcher(str) != null || bool.matcher(str) != null ||
+				variable.matcher(str) != null  || string.matcher(str) != null ||
+				parseInt(str) || parseBool(str)) {
+			return true;
+		}else {
+			return false;
+		}
+	}
 
-	}
-	
-	// <mul_expr> ::= <mul_expr> * <neg_expr> | <mul_expr> / <neg_expr> | <mul_expr> % <neg_expr> | <neg_expr>
-	public static String parseMul(String exp) {
-		Pattern p = Pattern.compile(parseNeg(exp));//+"|"+parseMul(exp)+" / "+parseNeg(exp)+"|"+parseMul(exp)+" % "+parseNeg(exp)+"|"+parseMul(exp)+" * "+parseNeg(exp));
-//		Matcher m = p.matcher(exp);	
-//		if(m.find()) {
-//			return m.group(0);
-//		}
-		return "";
-	}
-	
-	//<neg_expr> ::= - <i_root> | <i_root> 
-	public static String parseNeg(String exp) {
-		Pattern p = Pattern.compile(parseIRoot(exp));//+"|"+parseIRoot(exp));
-//		Matcher m = p.matcher(exp);	
-//		if(m.find()) {
-//			return m.group(0);
-//		}
-		return "";
-	}
-	
-	//<i_root> ::= <integer> | <real> | <variable> | sqrt(<expr_int>)
-	public static String parseIRoot(String exp) {
-		if (exp.length() == 0){
-			return "";
-		}
-		System.out.println(exp);
-		Pattern p2 = Pattern.compile("sqrt\\("+parseInt(exp.substring(5,exp.length()-1))+"\\)");
-		Matcher m2 = p2.matcher(exp);	
-		if(m2.find()) {
-			System.out.println(m2.group(0));
-			return m2.group(0);
-		}
-		
-		Pattern p1 = Pattern.compile(integer+"|"+real+"|"+variable);
-		Matcher m1 = p1.matcher(exp);	
-		if(m1.find()) {
-			System.out.println(m1.group(0));
-			return m1.group(0);
-		}
-		
-		return "";
-	}
-	
-	
-	public static String parseBool(Pattern exp) {
-		return "";
-	}
-	
 	
 	
 	// Initiate code for Java program

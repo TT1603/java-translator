@@ -1,19 +1,25 @@
-var x = args[0];
+var x = arg0;
  
 // Check if number is less than or equal to 1
-if x <= 1 then print “prime”
- 
+if x <= 1 then 
+print "prime" 
+end.
+
 // Check if number is 2
-else if x == 2 then print “prime”;
- 
+else if x == 2 then
+ print "prime" 
+end.
+
 // Check if n is a multiple of 2
-else if x % 2 == 0 then print “not prime”;
+else if x % 2 == 0 then print "not prime" 
  
 // If not, then just check the odds
 var i = 3;
-while i <= sqrt(n) {
-if n % i == 0 then print “not prime”
-else  i = i + 2;
-}
+while i <= sqrt(n):
+	if n % i == 0 then print "not prime" 
+	else 
+	i = i + 2
+	end.
+end.
 
-print “prime”;
+print "prime"
