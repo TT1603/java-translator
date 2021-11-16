@@ -1,3 +1,8 @@
-int x = args[0]
-//should be int x = args[0];
+
+
+// Wrong spacing format
+// Should be var x = arg0
+
+var x  =  arg0
+
 

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -23,6 +24,7 @@ public class Project2 {
 			File out = new File(outFileName + ".java"); 
 			FileWriter writer = new FileWriter(outFileName + ".java");
 		    initialCode(writer, outFileName);
+		    
 		    
 		    // translate the input file to Java and write to new output file
 			parseFile(writer, br);
@@ -44,7 +46,7 @@ public class Project2 {
 	variable names, string literals
 	 */
 	static Pattern integer = Pattern.compile("(\\d+)");
-	static Pattern bool = Pattern.compile("True|False");
+	static Pattern bool = Pattern.compile("true|false");
 	static Pattern variable = Pattern.compile("([a-z]+)");
 	static Pattern string = Pattern.compile("\\\"(.*)\\\"");
 
@@ -71,7 +73,6 @@ public class Project2 {
 				pArgs1 = Pattern.compile("var " + variable + " = arg" + integer);
 				mArgs1 = pArgs1.matcher(line);
 				if(mArgs1.find()) {						
-					//System.out.println(mArgs1.group(0));
 					w.write("int " + mArgs1.group(1) + " = (int) args[" + mArgs1.group(2) + "];\n");
 					continue;
 				}
@@ -79,7 +80,6 @@ public class Project2 {
 				pArgs1 = Pattern.compile(variable + " = arg" + integer);
 				mArgs1 = pArgs1.matcher(line);
 				if(mArgs1.find()) {						
-					//System.out.println(mArgs1.group(0));
 					w.write(mArgs1.group(1) + " = (int) args[" + mArgs1.group(2) + "];\n");
 					continue;
 				}		
@@ -88,7 +88,6 @@ public class Project2 {
 				Pattern pCmt = Pattern.compile("//(.*)");
 				Matcher mCmt = pCmt.matcher(line);				
 				if(mCmt.find()) {
-					//System.out.println(mCmt.group(0));		
 					w.write("//" + mCmt.group(1) + "\n");
 					continue;
 				}
@@ -136,8 +135,6 @@ public class Project2 {
 						throw new Exception("Wrong conditional " + m1.group(3));
 					}		
 					w.write("}\n");
-					//System.out.println("\nGroup1: "+ m1.group(1) + "\nGroup2: "+ m1.group(2) + "\nGroup3: "+ m1.group(3) + "\n");		
-					//w.write("if (" + m1.group(1) + "){\n\t" + m1.group(2) + ";\n}else{\n" + m1.group(3) + ";\n}\n");
 					continue;
 				}			
 				
@@ -158,8 +155,6 @@ public class Project2 {
 						throw new Exception("Wrong conditional " + m1.group(3));
 					}		
 					w.write("}\n");
-					//System.out.println("\nGroup1: "+ m1.group(1) + "\nGroup2: "+ m1.group(2) + "\nGroup3: "+ m1.group(3) + "\n");		
-					//w.write("if (" + m1.group(1) + "){\n\t" + m1.group(2) + ";\n}else{\n" + m1.group(3) + ";\n}\n");
 					continue;
 				}	
 							
@@ -175,8 +170,6 @@ public class Project2 {
 						throw new Exception("Wrong conditional " + m1.group(2));
 					}		
 					w.write("}\n");
-					//System.out.println("\nGroup1: "+ m1.group(1) + "\nGroup2: "+ m1.group(2) + "\n");		
-					//w.write("if (" + m1.group(1) + "){\n\t" + m1.group(2) + ";\n}\n");
 					continue;
 				}	
 							
@@ -192,8 +185,6 @@ public class Project2 {
 						throw new Exception("Wrong conditional " + m1.group(2));
 					}		
 					w.write("}\n");
-					//System.out.println("\nGroup1: "+ m1.group(1) + "\nGroup2: "+ m1.group(2) + "\n");		
-					//w.write("if (" + m1.group(1) + "){\n\t" + m1.group(2) + ";\n}\n");
 					continue;
 				}
 							
@@ -221,8 +212,6 @@ public class Project2 {
 						throw new Exception("Wrong conditional " + m1.group(1));
 					}		
 					w.write("}");			
-					//System.out.println("\nGroup1: "+ m1.group(1) + "\n");		
-					//w.write("else{\n\t" + m1.group(1) + ";\n}\n");
 					continue;
 				}
 				
@@ -247,7 +236,6 @@ public class Project2 {
 					if (!parseBool(m2.group(1))) {
 						throw new Exception("Wrong loop condition " + m2.group(1));
 					}
-					//System.out.println("\nGroup1: "+ m2.group(1) + "\n");		
 					w.write("while (" + m2.group(1) + "){\n");
 					continue;
 				}	
@@ -298,7 +286,6 @@ public class Project2 {
 		Matcher m = p.matcher(str);
 		if(m.find()) {
 			if (isExpr(m.group(2))) {
-				//System.out.println(m.group(0));		
 				try {
 					w.write("int " + m.group(1) + " = " + m.group(2) + ";\n");
 				} catch (IOException e) {
@@ -388,7 +375,9 @@ public class Project2 {
 	            boolean x = true;
 	            if (eat('(')) { // parentheses
 	                x = parseExpression();
-	                eat(')');
+	                if (!eat(')')) {
+	                	return false;
+	                }
 	            } else if ((ch >= '0' && ch <= '9') || ch >= 'a' && ch <= 'z') { // numbers
 	                while ((ch >= '0' && ch <= '9') || ch >= 'a' && ch <= 'z') {
 	                	nextChar();
@@ -407,7 +396,103 @@ public class Project2 {
 	// Parse boolean expression. 
 	// Return true if can parse according to grammar and false otherwise
 	public static boolean parseBool(final String str) {
-	    return true;
+	    return new Object() {
+	        int pos = -1, ch;
+
+	        void nextChar() {
+	            ch = (++pos < str.length()) ? str.charAt(pos) : -1;
+	        }
+
+	        boolean eat(int charToEat) {
+	            while (ch == ' ') {
+	            	nextChar();
+	            }
+	            if (ch == charToEat) {
+	                nextChar();
+	                return true;
+	            }
+	            return false;
+	        }
+
+	        boolean parse() {
+	            nextChar();
+	            boolean x = parseExpression();
+//            	System.out.println(pos);
+//	            if (pos < str.length()) {
+//	            	return false;
+//	            }
+	            return x;
+	        }
+
+	        /**
+			<expr_bool> ::= <expr_bool> || <and_expr> | <and_expr>
+			<and_expr> ::= <and_expr> && <not_expr> | <not_expr>
+			<not_expr> ::= !<b_root> | <b_root> 
+			<b_root> ::= true | false | <expr> <operator> <expr> 
+			<operator> ::= < | > | = | <= | >= | ==
+	         */
+
+	        boolean parseExpression() {
+	            boolean x = parseAnd();
+	            for (;;) {
+	                if (eat('|') && eat('|')) {
+	                	x = parseAnd(); 
+	                }
+	                else {
+	                	return x;
+	                }
+	            }
+	        }
+	        boolean parseAnd() {
+	            boolean x = parseOr();
+	            for (;;) {
+	                if (eat('&') && eat('&')) {
+	                	x = parseOr();
+	                }
+	                else {
+	                	return x;
+	                }
+	            }
+	        }   
+	        boolean parseOr() {
+	            boolean x = parseNot();
+	            for (;;) {
+	                if (eat('!')) {
+	                	x = parseNot();
+	                }
+	                else {
+	                	return x;
+	                }
+	            }
+	        }
+	        boolean parseNot() {
+	            boolean x = parseRoot();
+	            for (;;) {
+	                if (eat('!')) {
+	                	x = parseRoot();
+	                }
+	                else {
+	                	return x;
+	                }
+	            }
+	        }	        
+	        boolean parseRoot() {     	
+	            boolean x = true;
+	            if (eat('(')) { 
+	                x = parseExpression();
+	                if (!eat(')')) {
+	                	return false;
+	                }
+	            } else if ((ch >= '0' && ch <= '9') || ch >= 'a' && ch <= 'z' || ch == '<' || ch == '>' || ch == '=') { 
+	                while ((ch >= '0' && ch <= '9') || ch >= 'a' && ch <= 'z' || ch == '<' || ch == '>' || ch == '=') {
+	                	nextChar();
+	                }
+	            } else {
+	                return false;
+	            }
+	            return x;
+	        }
+	    }.parse();
 	}
 	
 	
@@ -461,7 +546,6 @@ public class Project2 {
 			pPrint = Pattern.compile("print " + string);
 			mPrint = pPrint.matcher(str);	
 			if(mPrint.find()) {
-				//System.out.println(mPrint.group(0));		
 				w.write("System.out.println(\"" + mPrint.group(1) + "\");\n");
 				return true;
 			}
@@ -469,7 +553,6 @@ public class Project2 {
 			pPrint = Pattern.compile("print " + variable);
 			mPrint = pPrint.matcher(str);
 			if(mPrint.find()) {
-				//System.out.println(mPrint.group(0));		
 				w.write("System.out.println(" + mPrint.group(1) + ");\n");
 				return true;
 			}

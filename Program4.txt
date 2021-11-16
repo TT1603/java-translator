@@ -1,3 +1,6 @@
-int x  =  args[0];
-//should be int x = args[0];
 
+
+// variable name can only be lowercase alphabetic characters
+// should be x = 3;
+
+x_1 = 3;
