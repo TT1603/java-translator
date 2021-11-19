@@ -5,7 +5,7 @@ public static void main(String[] args){
 int x = Integer.valueOf(args[0]);
 // Check if number is less than or equal to 1
 if (x <= 1){
-	System.out.println("prime");
+	System.out.println("not prime");
 return;
 }
 // Check if number is 2

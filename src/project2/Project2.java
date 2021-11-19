@@ -303,17 +303,23 @@ public class Project2 {
 	// Return true if can parse according to grammar and false otherwise
 	public static boolean parseInt(final String str) {
 	    return new Object() {
-	        int pos = -1, ch;
+	    	int pos = -1;
+	        int curChar;
 
 	        void nextChar() {
-	            ch = (++pos < str.length()) ? str.charAt(pos) : -1;
+	        	if (++pos < str.length()) {
+	        		curChar =  str.charAt(pos);
+	        	}
+	        	else {
+	        		curChar =  -1;
+	        	}
 	        }
 
 	        boolean eat(int charToEat) {
-	            while (ch == ' ') {
+	            while (curChar == ' ') {
 	            	nextChar();
 	            }
-	            if (ch == charToEat) {
+	            if (curChar == charToEat) {
 	                nextChar();
 	                return true;
 	            }
@@ -378,9 +384,8 @@ public class Project2 {
 	                if (!eat(')')) {
 	                	return false;
 	                }
-	            } else if ((ch >= '0' && ch <= '9') || ch >= 'a' && ch <= 'z') { // numbers
-	                while ((ch >= '0' && ch <= '9') || ch >= 'a' && ch <= 'z') {
-	                	System.out.println((char)ch);
+	            } else if ((curChar >= '0' && curChar <= '9') || curChar >= 'a' && curChar <= 'z') { // numbers
+	                while ((curChar >= '0' && curChar <= '9') || curChar >= 'a' && curChar <= 'z') {
 	                	nextChar();
 	                }
 	            } else {
@@ -398,17 +403,23 @@ public class Project2 {
 	// Return true if can parse according to grammar and false otherwise
 	public static boolean parseBool(final String str) {
 	    return new Object() {
-	        int pos = -1, ch;
+	        int pos = -1;
+	        int curChar;
 
 	        void nextChar() {
-	            ch = (++pos < str.length()) ? str.charAt(pos) : -1;
+	        	if (++pos < str.length()) {
+	        		curChar =  str.charAt(pos);
+	        	}
+	        	else {
+	        		curChar =  -1;
+	        	}
 	        }
 
 	        boolean eat(int charToEat) {
-	            while (ch == ' ') {
+	            while (curChar == ' ') {
 	            	nextChar();
 	            }
-	            if (ch == charToEat) {
+	            if (curChar == charToEat) {
 	                nextChar();
 	                return true;
 	            }
@@ -418,10 +429,6 @@ public class Project2 {
 	        boolean parse() {
 	            nextChar();
 	            boolean x = parseExpression();
-//            	System.out.println(pos);
-//	            if (pos < str.length()) {
-//	            	return false;
-//	            }
 	            return x;
 	        }
 
@@ -484,8 +491,8 @@ public class Project2 {
 	                if (!eat(')')) {
 	                	return false;
 	                }
-	            } else if ((ch >= '0' && ch <= '9') || ch >= 'a' && ch <= 'z' || ch == '<' || ch == '>' || ch == '=') { 
-	                while ((ch >= '0' && ch <= '9') || ch >= 'a' && ch <= 'z' || ch == '<' || ch == '>' || ch == '=') {
+	            } else if ((curChar >= '0' && curChar <= '9') || curChar >= 'a' && curChar <= 'z' || curChar == '<' || curChar == '>' || curChar == '=') { 
+	                while ((curChar >= '0' && curChar <= '9') || curChar >= 'a' && curChar <= 'z' || curChar == '<' || curChar == '>' || curChar == '=') {
 	                	nextChar();
 	                }
 	            } else {
